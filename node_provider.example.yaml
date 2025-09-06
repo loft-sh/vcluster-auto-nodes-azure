@@ -13,14 +13,6 @@ spec:
         repository: https://github.com/loft-sh/vcluster-auto-nodes-azure.git
         subPath: node
     nodeTypes:
-    - name: standard-a2-v2
-      resources:
-        cpu: "2"
-        memory: 4Gi
-      properties:
-        instance-type: Standard_A2_v2
-        location: "eastus"
-        resource-group: "*"
     - name: standard-d2s-v5
       resources:
         cpu: "2"

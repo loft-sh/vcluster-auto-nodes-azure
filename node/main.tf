@@ -1,36 +1,10 @@
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    azapi = {
-      source  = "azure/azapi"
-      version = "~>1.5"
-    }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-  use_cli = false
-}
-
-locals {
-  resource_group_name = var.vcluster.requirements["resource-group"]
-  location            = var.vcluster.requirements["location"]
-
-  vcluster_name      = var.vcluster.instance.metadata.name
-  vcluster_namespace = var.vcluster.instance.metadata.namespace
-
-  vm_name           = "${var.vcluster.name}-${random_id.vm_suffix.hex}"
-  private_subnet_id = var.vcluster.nodeEnvironment.outputs["private_subnet_id"]
-  instance_type     = var.vcluster.nodeType.spec.properties["instance-type"]
-}
-
 resource "random_id" "vm_suffix" {
   byte_length = 4
+}
+
+resource "random_integer" "subnet_index" {
+  min = 0
+  max = length(var.vcluster.nodeEnvironment.outputs["private_subnet_ids"]) - 1
 }
 
 resource "azurerm_network_interface" "private_vm" {
@@ -45,11 +19,14 @@ resource "azurerm_network_interface" "private_vm" {
   }
 }
 
-# The node is joined via cloud-init user data
-# We don't need the private key
+resource "azurerm_network_interface_security_group_association" "private_vm" {
+  network_interface_id      = azurerm_network_interface.private_vm.id
+  network_security_group_id = local.security_group_id
+}
+
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
-  rsa_bits  = 4096
+  rsa_bits  = 2048
 }
 
 resource "azurerm_linux_virtual_machine" "private_vm" {
@@ -61,16 +38,20 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
 
   disable_password_authentication = true
 
-  network_interface_ids = [
-    azurerm_network_interface.private_vm.id,
-  ]
-
   admin_ssh_key {
     username   = "azureuser"
     public_key = tls_private_key.vm_ssh.public_key_openssh
   }
 
+  network_interface_ids = [
+    azurerm_network_interface.private_vm.id,
+  ]
+
   user_data = base64encode(var.vcluster.userData)
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   os_disk {
     caching              = "ReadWrite"
@@ -78,6 +59,7 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
     disk_size_gb         = 100
   }
 
+  # Ubuntu 22.04 LTS
   source_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"
@@ -86,7 +68,8 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
   }
 
   tags = {
-    vcluster  = local.vcluster_name
-    namespace = local.vcluster_namespace
+    "Name"               = local.vm_name
+    "vcluster:name"      = local.vcluster_name
+    "vcluster:namespace" = local.vcluster_namespace
   }
 }
