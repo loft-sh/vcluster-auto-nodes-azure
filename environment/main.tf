@@ -10,6 +10,10 @@ module "validation" {
   subscription_id = try(var.vcluster.requirements["subscription-id"], null)
 }
 
+data "azurerm_resource_group" "current" {
+  name = local.resource_group_name
+}
+
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "~> 0.7"
@@ -52,7 +56,7 @@ module "vnet" {
 
   name                = local.vnet_name
   location            = local.location
-  resource_group_name = local.resource_group_name
+  parent_id           = data.azurerm_resource_group.current.id
   address_space       = [local.vnet_cidr_block]
 
   subnets = merge(
