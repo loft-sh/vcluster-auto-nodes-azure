@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-cloud-config
+  namespace: kube-system
+type: Opaque
+stringData:
+  azure.json: |-
+    {
+      "cloud": "AzurePublicCloud",
+      "subscriptionId": "${subscription_id}",
+      "resourceGroup": "${resource_group_name}",
+      "location": "${location}",
+      "vmType": "standard",
+      "useManagedIdentityExtension": true,
+      "userAssignedIdentityID": ${ccm_csi_client_id},
+      "useInstanceMetadata": true,
+      "securityGroupName": "${security_group_name}",
+      "tagsMap": {
+        "vcluster:name": "${vcluster_name}"
+      }
+    }

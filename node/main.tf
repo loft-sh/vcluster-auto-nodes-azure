@@ -1,9 +1,9 @@
 module "validation" {
   source = "./validation"
 
-  location        = var.vcluster.requirements["location"]
-  resource_group  = var.vcluster.requirements["resource-group"]
-  subscription_id = try(var.vcluster.requirements["subscription-id"], null)
+  location        = var.vcluster.nodeType.spec.properties["location"]
+  resource_group  = var.vcluster.nodeType.spec.properties["resource-group"]
+  subscription_id = try(var.vcluster.nodeType.spec.properties["subscription-id"], null)
 }
 
 resource "random_id" "vm_suffix" {
@@ -12,7 +12,7 @@ resource "random_id" "vm_suffix" {
 
 resource "random_integer" "subnet_index" {
   min = 0
-  max = length(var.vcluster.nodeEnvironment.outputs["private_subnet_ids"]) - 1
+  max = length(var.vcluster.nodeEnvironment.outputs.infrastructure["private_subnet_ids"]) - 1
 }
 
 resource "azurerm_network_interface" "private_vm" {
@@ -58,7 +58,8 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
   user_data = base64encode(var.vcluster.userData)
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [local.ccm_csi_resource_id]
   }
 
   os_disk {

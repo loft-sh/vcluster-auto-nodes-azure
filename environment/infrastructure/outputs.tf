@@ -21,3 +21,25 @@ output "vnet_id" {
   description = "Virtual Network ID"
   value       = module.vnet.resource_id
 }
+
+output "resource_group_name" {
+  value = local.resource_group_name
+}
+
+output "location" {
+  value = local.location
+}
+
+output "subscription_id" {
+  value = split("/", data.azurerm_resource_group.current.id)[2]
+}
+
+# For IMDS token requests
+output "ccm_csi_client_id" {
+  value = azurerm_user_assigned_identity.ccm_csi.client_id
+}
+
+# For VM
+output "ccm_csi_resource_id" {
+  value = azurerm_user_assigned_identity.ccm_csi.id
+}
