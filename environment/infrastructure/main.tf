@@ -89,4 +89,6 @@ module "vnet" {
   }
 
   depends_on = [azurerm_network_security_group.workers, module.nat_gateway]
+
+  enable_telemetry = false
 }
