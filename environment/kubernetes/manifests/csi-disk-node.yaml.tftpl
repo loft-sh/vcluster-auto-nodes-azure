@@ -59,6 +59,7 @@ spec:
       serviceAccountName: csi-azuredisk-node-sa
       nodeSelector:
         kubernetes.io/os: linux
+        vcluster.loft.sh/node-provider: ${node_provider_name}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

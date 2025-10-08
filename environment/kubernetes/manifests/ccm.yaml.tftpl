@@ -154,6 +154,8 @@ spec:
     spec:
       priorityClassName: system-node-critical
       hostNetwork: true
+      nodeSelector:
+        vcluster.loft.sh/node-provider: ${node_provider_name}
       serviceAccountName: cloud-controller-manager
       tolerations:
       - key: node.cloudprovider.kubernetes.io/uninitialized

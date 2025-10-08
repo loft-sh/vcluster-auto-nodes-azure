@@ -100,6 +100,7 @@ spec:
       serviceAccountName: csi-snapshot-controller-sa
       nodeSelector:
         kubernetes.io/os: linux
+        vcluster.loft.sh/node-provider: ${node_provider_name}
       priorityClassName: system-cluster-critical
       securityContext:
         seccompProfile:

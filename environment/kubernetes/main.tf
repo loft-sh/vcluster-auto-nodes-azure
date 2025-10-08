@@ -13,13 +13,14 @@ module "kubernetes_apply_config" {
     subscription_id     = local.subscription_id
     security_group_name = local.security_group_name
     ccm_csi_client_id   = local.ccm_csi_client_id
+    node_provider_name  = local.node_provider_name
   }
 
   computed_fields = ["stringData", "data"]
 }
 
 ##########
-# CCM 
+# CCM
 #########
 
 module "kubernetes_apply_ccm" {
