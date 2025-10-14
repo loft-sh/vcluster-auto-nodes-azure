@@ -227,6 +227,9 @@ spec:
         - key: "CriticalAddonsOnly"
           operator: "Exists"
           effect: "NoSchedule"
+        - key: "vcluster.com/cleanup"
+          operator: "Exists"
+          effect: "NoExecute"
       containers:
         - name: csi-provisioner
           image: mcr.microsoft.com/oss/v2/kubernetes-csi/csi-provisioner:v5.3.0

@@ -171,6 +171,9 @@ spec:
         effect: NoSchedule
       - key: karpenter.sh/unregistered
         effect: NoExecute
+      - key: "vcluster.com/cleanup"
+        operator: "Exists"
+        effect: "NoExecute"
       containers:
       - name: cloud-controller-manager
         image: mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.30.12
