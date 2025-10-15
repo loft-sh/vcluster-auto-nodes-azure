@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: azure-cloud-config
+  name: ${node_provider_name}-cloud-config
   namespace: kube-system
 type: Opaque
 stringData:
@@ -13,7 +13,7 @@ stringData:
       "location": "${location}",
       "vmType": "standard",
       "useManagedIdentityExtension": true,
-      "userAssignedIdentityID": ${ccm_csi_client_id},
+      "userAssignedIdentityID": ${vcluster_node_client_id},
       "useInstanceMetadata": true,
       "securityGroupName": "${security_group_name}",
       "tagsMap": {

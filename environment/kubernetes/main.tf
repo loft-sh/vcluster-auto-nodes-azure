@@ -3,17 +3,19 @@
 ##############
 
 module "kubernetes_apply_config" {
+  for_each = local.ccm_enabled || local.csi_enabled ? { "enabled" = true } : {}
+
   source        = "./apply"
   manifest_file = "${path.module}/manifests/cloud-config.yaml.tftpl"
 
   template_vars = {
-    vcluster_name       = local.vcluster_name
-    location            = local.location
-    resource_group_name = local.resource_group_name
-    subscription_id     = local.subscription_id
-    security_group_name = local.security_group_name
-    ccm_csi_client_id   = local.ccm_csi_client_id
-    node_provider_name  = local.node_provider_name
+    vcluster_name           = local.vcluster_name
+    location                = local.location
+    resource_group_name     = local.resource_group_name
+    subscription_id         = local.subscription_id
+    security_group_name     = local.security_group_name
+    vcluster_node_client_id = local.vcluster_node_client_id
+    node_provider_name      = local.node_provider_name
   }
 
   computed_fields = ["stringData", "data"]
@@ -24,11 +26,15 @@ module "kubernetes_apply_config" {
 #########
 
 module "kubernetes_apply_ccm" {
+  for_each = local.ccm_enabled ? { "enabled" = true } : {}
+
   source        = "./apply"
   manifest_file = "${path.module}/manifests/ccm.yaml.tftpl"
 
   template_vars = {
-    vcluster_name = local.vcluster_name
+    vcluster_name      = local.vcluster_name
+    node_provider_name = local.node_provider_name
+    controllers        = local.ccm_lb_enabled ? "*,-cloud-node" : "*,-cloud-node,-service"
   }
 
   depends_on = [module.kubernetes_apply_config]
@@ -39,8 +45,14 @@ module "kubernetes_apply_ccm" {
 #########
 
 module "kubernetes_apply_cnm" {
+  for_each = local.ccm_enabled ? { "enabled" = true } : {}
+
   source        = "./apply"
   manifest_file = "${path.module}/manifests/cnm.yaml.tftpl"
+
+  template_vars = {
+    node_provider_name = local.node_provider_name
+  }
 }
 
 ##########
@@ -50,14 +62,18 @@ module "kubernetes_apply_cnm" {
 module "kubernetes_apply_csi" {
   source = "./apply"
 
-  for_each = toset([
+  for_each = local.csi_enabled ? toset([
     "${path.module}/manifests/csi-disk-controller.yaml.tftpl",
     "${path.module}/manifests/csi-disk-node.yaml.tftpl",
     "${path.module}/manifests/csi-snapshot-crd.yaml.tftpl",
     "${path.module}/manifests/csi-snapshot-controller.yaml.tftpl"
-  ])
+  ]) : toset([])
 
   manifest_file = each.value
+
+  template_vars = {
+    node_provider_name = local.node_provider_name
+  }
 
   depends_on = [module.kubernetes_apply_config]
 }

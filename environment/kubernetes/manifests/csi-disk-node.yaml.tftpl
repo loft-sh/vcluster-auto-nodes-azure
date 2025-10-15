@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: csi-azuredisk-node-sa
+  name: ${node_provider_name}-csi-azuredisk-node-sa
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-azuredisk-node-role
+  name: ${node_provider_name}-csi-azuredisk-node-role
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -26,20 +26,20 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-azuredisk-node-secret-binding
+  name: ${node_provider_name}-csi-azuredisk-node-secret-binding
 subjects:
   - kind: ServiceAccount
-    name: csi-azuredisk-node-sa
+    name: ${node_provider_name}-csi-azuredisk-node-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: csi-azuredisk-node-role
+  name: ${node_provider_name}-csi-azuredisk-node-role
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-azuredisk-node
+  name: ${node_provider_name}-csi-azuredisk-node
   namespace: kube-system
 spec:
   updateStrategy:
@@ -48,15 +48,15 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: csi-azuredisk-node
+      app: ${node_provider_name}-csi-azuredisk-node
   template:
     metadata:
       labels:
-        app: csi-azuredisk-node
+        app: ${node_provider_name}-csi-azuredisk-node
     spec:
       hostNetwork: true
       dnsPolicy: Default
-      serviceAccountName: csi-azuredisk-node-sa
+      serviceAccountName: ${node_provider_name}-csi-azuredisk-node-sa
       nodeSelector:
         kubernetes.io/os: linux
         vcluster.loft.sh/node-provider: ${node_provider_name}
@@ -227,7 +227,7 @@ spec:
           name: sys-class
         - name: cloud-config
           secret:
-            secretName: azure-cloud-config
+            secretName: ${node_provider_name}-cloud-config
             items:
             - key: azure.json
               path: azure.json
@@ -247,10 +247,10 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: azure-disk-standard
+  name: ${node_provider_name}-disk-standard
 provisioner: disk.csi.azure.com
 parameters:
-  skuName: StandardSSD_LRS  # available values: StandardSSD_LRS, StandardSSD_ZRS, Premium_LRS, Premium_ZRS, etc.
+  skuName: StandardSSD_LRS
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true

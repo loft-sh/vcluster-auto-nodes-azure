@@ -1,14 +1,14 @@
 output "private_subnet_ids" {
   description = "A list of private subnet ids"
   value = [
-    for az in local.azs : module.vnet.subnets[format("%s-private-%s", local.vcluster_name, az)].resource_id
+    for az in local.azs : module.vnet[local.location_rgroup_key].subnets[format("%s-private-%s", local.vcluster_unique_name, az)].resource_id
   ]
 }
 
 output "public_subnet_ids" {
   description = "A list of public subnet ids"
   value = [
-    for az in local.azs : module.vnet.subnets[format("%s-public-%s", local.vcluster_name, az)].resource_id
+    for az in local.azs : module.vnet[local.location_rgroup_key].subnets[format("%s-public-%s", local.vcluster_unique_name, az)].resource_id
   ]
 }
 
@@ -19,7 +19,7 @@ output "security_group_id" {
 
 output "vnet_id" {
   description = "Virtual Network ID"
-  value       = module.vnet.resource_id
+  value       = module.vnet[local.location_rgroup_key].resource_id
 }
 
 output "resource_group_name" {
@@ -35,11 +35,15 @@ output "subscription_id" {
 }
 
 # For IMDS token requests
-output "ccm_csi_client_id" {
-  value = azurerm_user_assigned_identity.ccm_csi.client_id
+output "vcluster_node_client_id" {
+  value = azurerm_user_assigned_identity.vcluster_node.client_id
 }
 
 # For VM
-output "ccm_csi_resource_id" {
-  value = azurerm_user_assigned_identity.ccm_csi.id
+output "vcluster_node_identity_id" {
+  value = azurerm_user_assigned_identity.vcluster_node.id
+}
+
+output "vcluster_unique_name" {
+  value = local.vcluster_unique_name
 }

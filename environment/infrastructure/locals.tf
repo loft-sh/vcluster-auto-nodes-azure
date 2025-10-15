@@ -1,12 +1,18 @@
 locals {
-  vcluster_name      = nonsensitive(var.vcluster.instance.metadata.name)
-  vcluster_namespace = nonsensitive(var.vcluster.instance.metadata.namespace)
-
   location            = nonsensitive(module.validation.location)
   resource_group_name = nonsensitive(module.validation.resource_group)
   resource_group_id   = data.azurerm_resource_group.current.id
+  location_rgroup_key = format("%s-%s", local.location, local.resource_group_name)
 
-  vnet_cidr_block = "10.0.0.0/16"
+  vcluster_name      = nonsensitive(var.vcluster.instance.metadata.name)
+  vcluster_namespace = nonsensitive(var.vcluster.instance.metadata.namespace)
+
+  # A random_id resource cannot be used here because of how the VPC module applies resources.
+  # The module needs resource names to be known in advance.
+  random_id            = substr(md5(format("%s%s", local.vcluster_namespace, local.vcluster_name)), 0, 8)
+  vcluster_unique_name = format("%s-%s", local.vcluster_name, local.random_id)
+
+  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vnet-cidr"], "10.0.0.0/16")
 
   # Use 2 AZs if available
   azs = try(
@@ -19,5 +25,6 @@ locals {
   public_subnets  = [for idx, az in local.azs : cidrsubnet(local.vnet_cidr_block, 8, idx)]
   private_subnets = [for idx, az in local.azs : cidrsubnet(local.vnet_cidr_block, 8, idx + length(local.azs))]
 
-  vnet_name = format("%s-%s-vnet", local.vcluster_name, random_id.vnet_suffix.hex)
+  ccm_enabled = try(tobool(var.vcluster.properties["vcluster.com/ccm-enabled"]), true)
+  csi_enabled = try(tobool(var.vcluster.properties["vcluster.com/csi-enabled"]), true)
 }

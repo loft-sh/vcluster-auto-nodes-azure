@@ -1,5 +1,5 @@
 resource "azurerm_network_security_group" "workers" {
-  name                = format("%s-workers-nsg", local.vcluster_name)
+  name                = format("%s-workers-nsg", local.vcluster_unique_name)
   location            = local.location
   resource_group_name = local.resource_group_name
 

@@ -59,7 +59,7 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [local.ccm_csi_resource_id]
+    identity_ids = [local.vcluster_node_identity_id]
   }
 
   os_disk {
@@ -77,7 +77,7 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
   }
 
   tags = {
-    "Name"               = local.vm_name
+    "name"               = local.vm_name
     "vcluster:name"      = local.vcluster_name
     "vcluster:namespace" = local.vcluster_namespace
   }
