@@ -105,6 +105,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - create
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -184,7 +190,7 @@ spec:
         - "cloud-controller-manager"
         args:
         - "--allocate-node-cidrs=false"
-        - "--use-service-account-credentials=true"
+        - "--use-service-account-credentials=false"
         - "--cloud-config=/etc/kubernetes/cloud-config/azure.json"
         - "--cloud-provider=azure"
         - "--cluster-name=${vcluster_name}"

@@ -17,6 +17,11 @@ output "security_group_id" {
   value       = azurerm_network_security_group.workers.id
 }
 
+output "security_group_name" {
+  description = "Security group name for CCM to expose LB"
+  value       = azurerm_network_security_group.workers.name
+}
+
 output "vnet_id" {
   description = "Virtual Network ID"
   value       = module.vnet[local.location_rgroup_key].resource_id
