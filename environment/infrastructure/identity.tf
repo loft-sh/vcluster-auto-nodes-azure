@@ -9,8 +9,6 @@ resource "azurerm_user_assigned_identity" "vcluster_node" {
 ###################
 
 resource "azurerm_role_definition" "ccm" {
-  for_each = local.ccm_enabled ? { enabled = true } : {}
-
   name        = format("CCM role for %s", local.vcluster_unique_name)
   scope       = local.resource_group_id
   description = "Custom role for Kubernetes Azure CCM (LoadBalancers, PIPs, NSG rules, routes)."
@@ -108,7 +106,7 @@ resource "azurerm_role_assignment" "ccm" {
   for_each = local.ccm_enabled ? { enabled = true } : {}
 
   scope              = local.resource_group_id
-  role_definition_id = split("|", azurerm_role_definition.ccm[each.key].id)[0] # the output returns a list(!), it's not ID only!
+  role_definition_id = split("|", azurerm_role_definition.ccm.id)[0] # the output returns a list(!), it's not ID only!
   principal_id       = azurerm_user_assigned_identity.vcluster_node.principal_id
   principal_type     = "ServicePrincipal"
 
@@ -120,8 +118,6 @@ resource "azurerm_role_assignment" "ccm" {
 ###################
 
 resource "azurerm_role_definition" "csi" {
-  for_each = local.csi_enabled ? { enabled = true } : {}
-
   name        = format("CSI role for %s", local.vcluster_unique_name)
   scope       = local.resource_group_id
   description = "Custom role for Kubernetes Azure CSI (disks, snapshots, storage)."
@@ -176,7 +172,7 @@ resource "azurerm_role_assignment" "csi" {
   for_each = local.csi_enabled ? { enabled = true } : {}
 
   scope              = local.resource_group_id
-  role_definition_id = split("|", azurerm_role_definition.csi[each.key].id)[0] # the output returns a list(!), it's not ID only!
+  role_definition_id = split("|", azurerm_role_definition.csi.id)[0] # the output returns a list(!), it's not ID only!
   principal_id       = azurerm_user_assigned_identity.vcluster_node.principal_id
   principal_type     = "ServicePrincipal"
 

@@ -56,35 +56,16 @@ module "vnet" {
   for_each = { (local.location_rgroup_key) = true }
 
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "~> 0.10"
+  version = "~> 0.15"
 
   name          = local.vcluster_unique_name
   location      = local.location
   parent_id     = data.azurerm_resource_group.current.id
   address_space = [local.vnet_cidr_block]
 
-  subnets = merge(
-    # Public subnets
-    {
-      for idx, az in local.azs : format("%s-public-%s", local.vcluster_unique_name, az) => {
-        name             = format("%s-public-%s", local.vcluster_unique_name, az)
-        address_prefixes = [local.public_subnets[idx]]
-      }
-    },
-    # Private subnets
-    {
-      for idx, az in local.azs : format("%s-private-%s", local.vcluster_unique_name, az) => {
-        name             = format("%s-private-%s", local.vcluster_unique_name, az)
-        address_prefixes = [local.private_subnets[idx]]
-        network_security_group = {
-          id = azurerm_network_security_group.workers.id
-        }
-        nat_gateway = {
-          id = module.nat_gateway[local.location_rgroup_key].resource.id
-        }
-      }
-    }
-  )
+  # There is a bug that prevents subnets deletion in case of terraform timeout.
+  # That's why subnet management has been moved to separate resources.
+  subnets = {}
 
   tags = {
     "name"               = local.vcluster_unique_name
@@ -92,7 +73,44 @@ module "vnet" {
     "vcluster:namespace" = local.vcluster_namespace
   }
 
-  depends_on = [azurerm_network_security_group.workers, module.nat_gateway]
-
   enable_telemetry = false
+}
+
+module "subnet_public" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm//modules/subnet"
+  version = "~> 0.15"
+
+  for_each = {
+    for idx, az in local.azs :
+    format("%s-public-%s", local.vcluster_unique_name, az) => {
+      prefix = local.public_subnets[idx]
+    }
+  }
+
+  parent_id        = module.vnet[local.location_rgroup_key].resource_id
+  name             = each.key
+  address_prefixes = [each.value.prefix]
+}
+
+module "subnet_private" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm//modules/subnet"
+  version = "~> 0.15"
+
+  for_each = {
+    for idx, az in local.azs :
+    format("%s-private-%s", local.vcluster_unique_name, az) => {
+      prefix = local.private_subnets[idx]
+    }
+  }
+
+  parent_id        = module.vnet[local.location_rgroup_key].resource_id
+  name             = each.key
+  address_prefixes = [each.value.prefix]
+
+  network_security_group = {
+    id = azurerm_network_security_group.workers.id
+  }
+  nat_gateway = {
+    id = module.nat_gateway[local.location_rgroup_key].resource.id
+  }
 }
