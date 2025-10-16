@@ -3,19 +3,19 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.0"
+      version = "~> 4.48"
     }
     azapi = {
       source  = "azure/azapi"
-      version = ">= 2.0"
+      version = "~> 2.7"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.0"
+      version = "~> 3.7"
     }
     tls = {
       source  = "hashicorp/tls"
-      version = ">= 4.0"
+      version = "~> 4.1"
     }
   }
 }
