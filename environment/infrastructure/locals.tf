@@ -12,7 +12,7 @@ locals {
   random_id            = substr(md5(format("%s%s", local.vcluster_namespace, local.vcluster_name)), 0, 8)
   vcluster_unique_name = format("%s-%s", local.vcluster_name, local.random_id)
 
-  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vnet-cidr"], "10.0.0.0/16")
+  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vnet-cidr"], "10.5.0.0/16")
 
   # Use 2 AZs if available
   azs = try(
