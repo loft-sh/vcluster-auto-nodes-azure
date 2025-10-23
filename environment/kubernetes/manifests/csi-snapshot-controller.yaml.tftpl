@@ -2,13 +2,17 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller-sa
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-sa-${suffix}
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -41,20 +45,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-snapshot-controller-sa
+    name: csi-snapshot-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-csi-snapshot-controller-role
+  name: csi-snapshot-controller-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller-leaderelection-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-leaderelection-role-${suffix}
 rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
@@ -63,26 +71,30 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller-leaderelection-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-leaderelection-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-snapshot-controller-sa
+    name: csi-snapshot-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-csi-snapshot-controller-leaderelection-role
+  name: csi-snapshot-controller-leaderelection-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ${node_provider_name}-csi-snapshot-controller
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-snapshot-controller-${suffix}
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${node_provider_name}-csi-snapshot-controller
+      app: csi-snapshot-controller-${suffix}
   # the snapshot controller won't be marked as ready if the v1 CRDs are unavailable
   # in #504 the snapshot-controller will exit after around 7.5 seconds if it
   # can't find the v1 CRDs so this value should be greater than that
@@ -95,9 +107,9 @@ spec:
   template:
     metadata:
       labels:
-        app: ${node_provider_name}-csi-snapshot-controller
+        app: csi-snapshot-controller-${suffix}
     spec:
-      serviceAccountName: ${node_provider_name}-csi-snapshot-controller-sa
+      serviceAccountName: csi-snapshot-controller-sa-${suffix}
       nodeSelector:
         kubernetes.io/os: linux
         vcluster.loft.sh/node-provider: ${node_provider_name}

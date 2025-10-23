@@ -1,5 +1,5 @@
 resource "azurerm_network_security_group" "workers" {
-  name                = format("%s-workers-nsg", local.vcluster_unique_name)
+  name                = format("vcluster-workers-nsg-%s", local.random_id)
   location            = local.location
   resource_group_name = local.resource_group_name
 
@@ -61,5 +61,11 @@ resource "azurerm_network_security_group" "workers" {
     destination_port_range     = "*"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
+  }
+
+  tags = {
+    "name"               = format("vcluster-workers-nsg-%s", local.random_id)
+    "vcluster:name"      = local.vcluster_name
+    "vcluster:namespace" = local.vcluster_namespace
   }
 }

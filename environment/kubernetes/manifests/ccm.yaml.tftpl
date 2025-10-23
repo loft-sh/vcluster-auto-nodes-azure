@@ -2,17 +2,20 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ${node_provider_name}-cloud-controller-manager
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: azure-cloud-controller-manager-${suffix}
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: system:${node_provider_name}-cloud-controller-manager
+  name: azure-cloud-controller-manager-${suffix}
   annotations:
     rbac.authorization.kubernetes.io/autoupdate: "true"
+    vcluster.loft.sh/node-provider: ${node_provider_name}
   labels:
-    k8s-app: ${node_provider_name}-cloud-controller-manager
+    k8s-app: azure-cloud-controller-manager-${suffix}
 rules:
 - apiGroups:
   - ""
@@ -115,20 +118,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: system:${node_provider_name}-cloud-controller-manager
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: azure-cloud-controller-manager-${suffix}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:${node_provider_name}-cloud-controller-manager
+  name: azure-cloud-controller-manager-${suffix}
 subjects:
 - kind: ServiceAccount
-  name: ${node_provider_name}-cloud-controller-manager
+  name: azure-cloud-controller-manager-${suffix}
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: system:${node_provider_name}-cloud-controller-manager:extension-apiserver-authentication-reader
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: azure-cloud-controller-manager-${suffix}-api-auth
   namespace: kube-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -136,33 +143,35 @@ roleRef:
   name: extension-apiserver-authentication-reader
 subjects:
 - kind: ServiceAccount
-  name: ${node_provider_name}-cloud-controller-manager
+  name: azure-cloud-controller-manager-${suffix}
   namespace: kube-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${node_provider_name}-cloud-controller-manager
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: azure-cloud-controller-manager-${suffix}
   namespace: kube-system
   labels:
-    component: ${node_provider_name}-cloud-controller-manager
+    component: azure-cloud-controller-manager-${suffix}
 spec:
   replicas: 1
   selector:
     matchLabels:
       tier: control-plane
-      component: ${node_provider_name}-cloud-controller-manager
+      component: azure-cloud-controller-manager-${suffix}
   template:
     metadata:
       labels:
         tier: control-plane
-        component: ${node_provider_name}-cloud-controller-manager
+        component: azure-cloud-controller-manager-${suffix}
     spec:
       priorityClassName: system-cluster-critical
       hostNetwork: true
       nodeSelector:
         vcluster.loft.sh/node-provider: ${node_provider_name}
-      serviceAccountName: ${node_provider_name}-cloud-controller-manager
+      serviceAccountName: azure-cloud-controller-manager-${suffix}
       tolerations:
       - key: node.cloudprovider.kubernetes.io/uninitialized
         operator: Equal
@@ -197,7 +206,7 @@ spec:
         - "--controllers=${controllers}"
         - "--configure-cloud-routes=false"
         - "--leader-elect=true"
-        - "--leader-elect-resource-name=${node_provider_name}-cloud-controller-manager"
+        - "--leader-elect-resource-name=azure-cloud-controller-manager-${suffix}"
         - "--v=4"
         - "--secure-port=10267"
         resources:
@@ -233,7 +242,7 @@ spec:
           path: /etc/kubernetes
       - name: cloud-config
         secret:
-          secretName: ${node_provider_name}-cloud-config
+          secretName: azure-cloud-config-${suffix}
       - name: etc-ssl
         hostPath:
           path: /etc/ssl

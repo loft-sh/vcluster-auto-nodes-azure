@@ -16,7 +16,7 @@ data "azurerm_resource_group" "current" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.7"
+  version = "~> 0.7.0"
 
   region_filter          = [local.location]
   has_availability_zones = true
@@ -26,16 +26,16 @@ module "nat_gateway" {
   for_each = { (local.location_rgroup_key) = true }
 
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "~> 0.2"
+  version = "~> 0.2.0"
 
-  name                = format("%s-nat-gateway", local.vcluster_unique_name)
+  name                = format("vcluster-nat-gateway-%s", local.random_id)
   location            = local.location
   resource_group_name = local.resource_group_name
 
   # Configure public IPs for NAT Gateway
   public_ips = {
     pip1 = {
-      name = format("%s-nat-pip", local.vcluster_unique_name)
+      name = format("vcluster-nat-pip-%s", local.random_id)
     }
   }
 
@@ -46,7 +46,7 @@ module "nat_gateway" {
   }
 
   tags = {
-    "name"               = format("%s-nat-gateway", local.vcluster_unique_name)
+    "name"               = format("vcluster-nat-gateway-%s", local.random_id)
     "vcluster:name"      = local.vcluster_name
     "vcluster:namespace" = local.vcluster_namespace
   }
@@ -56,9 +56,9 @@ module "vnet" {
   for_each = { (local.location_rgroup_key) = true }
 
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "~> 0.15"
+  version = "~> 0.15.0"
 
-  name          = local.vcluster_unique_name
+  name          = format("vcluster-vnet-%s", local.random_id)
   location      = local.location
   parent_id     = data.azurerm_resource_group.current.id
   address_space = [local.vnet_cidr_block]
@@ -68,7 +68,7 @@ module "vnet" {
   subnets = {}
 
   tags = {
-    "name"               = local.vcluster_unique_name
+    "name"               = format("vcluster-vnet-%s", local.random_id)
     "vcluster:name"      = local.vcluster_name
     "vcluster:namespace" = local.vcluster_namespace
   }
@@ -78,11 +78,11 @@ module "vnet" {
 
 module "subnet_public" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm//modules/subnet"
-  version = "~> 0.15"
+  version = "~> 0.15.0"
 
   for_each = {
     for idx, az in local.azs :
-    format("%s-public-%s", local.vcluster_unique_name, az) => {
+    format("vcluster-public-%s-%s", local.random_id, az) => {
       prefix = local.public_subnets[idx]
     }
   }
@@ -94,11 +94,11 @@ module "subnet_public" {
 
 module "subnet_private" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm//modules/subnet"
-  version = "~> 0.15"
+  version = "~> 0.15.0"
 
   for_each = {
     for idx, az in local.azs :
-    format("%s-private-%s", local.vcluster_unique_name, az) => {
+    format("vcluster-private-%s-%s", local.random_id, az) => {
       prefix = local.private_subnets[idx]
     }
   }

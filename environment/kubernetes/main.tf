@@ -16,6 +16,7 @@ module "kubernetes_apply_config" {
     security_group_name     = local.security_group_name
     vcluster_node_client_id = local.vcluster_node_client_id
     node_provider_name      = local.node_provider_name
+    suffix                  = local.suffix
   }
 
   computed_fields = ["stringData", "data"]
@@ -35,6 +36,7 @@ module "kubernetes_apply_ccm" {
     vcluster_name      = local.vcluster_name
     node_provider_name = local.node_provider_name
     controllers        = local.ccm_lb_enabled ? "*,-cloud-node" : "*,-cloud-node,-service"
+    suffix             = local.suffix
   }
 
   depends_on = [module.kubernetes_apply_config]
@@ -52,6 +54,7 @@ module "kubernetes_apply_cnm" {
 
   template_vars = {
     node_provider_name = local.node_provider_name
+    suffix             = local.suffix
   }
 }
 
@@ -73,6 +76,7 @@ module "kubernetes_apply_csi" {
 
   template_vars = {
     node_provider_name = local.node_provider_name
+    suffix             = local.suffix
   }
 
   depends_on = [module.kubernetes_apply_config]

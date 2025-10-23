@@ -1,7 +1,13 @@
 resource "azurerm_user_assigned_identity" "vcluster_node" {
-  name                = format("%s-node", local.vcluster_unique_name)
+  name                = format("vcluster-node-%s", local.random_id)
   location            = local.location
   resource_group_name = local.resource_group_name
+
+  tags = {
+    "name"               = format("vcluster-node-%s", local.random_id)
+    "vcluster:name"      = local.vcluster_name
+    "vcluster:namespace" = local.vcluster_namespace
+  }
 }
 
 ###################
@@ -9,9 +15,9 @@ resource "azurerm_user_assigned_identity" "vcluster_node" {
 ###################
 
 resource "azurerm_role_definition" "ccm" {
-  name        = format("CCM role for %s", local.vcluster_unique_name)
+  name        = format("vcluster-ccm-%s", local.random_id)
   scope       = local.resource_group_id
-  description = "Custom role for Kubernetes Azure CCM (LoadBalancers, PIPs, NSG rules, routes)."
+  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
 
   permissions {
     actions = [
@@ -118,9 +124,9 @@ resource "azurerm_role_assignment" "ccm" {
 ###################
 
 resource "azurerm_role_definition" "csi" {
-  name        = format("CSI role for %s", local.vcluster_unique_name)
+  name        = format("vcluster-csi-%s", local.random_id)
   scope       = local.resource_group_id
-  description = "Custom role for Kubernetes Azure CSI (disks, snapshots, storage)."
+  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
 
   permissions {
     actions = [

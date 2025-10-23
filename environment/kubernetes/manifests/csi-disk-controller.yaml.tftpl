@@ -2,13 +2,17 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-controller-sa
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-controller-sa-${suffix}
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-external-provisioner-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-external-provisioner-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -41,20 +45,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-csi-provisioner-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-csi-provisioner-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-controller-sa
+    name: csi-azuredisk-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-azuredisk-external-provisioner-role
+  name: csi-azuredisk-external-provisioner-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-external-attacher-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-external-attacher-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -81,20 +89,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-csi-attacher-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-csi-attacher-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-controller-sa
+    name: csi-azuredisk-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-azuredisk-external-attacher-role
+  name: csi-azuredisk-external-attacher-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-external-snapshotter-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-external-snapshotter-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["events"]
@@ -118,21 +130,25 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-csi-snapshotter-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-snapshotter-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-controller-sa
+    name: csi-azuredisk-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-azuredisk-external-snapshotter-role
+  name: csi-azuredisk-external-snapshotter-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-external-resizer-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-external-resizer-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -159,20 +175,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-azuredisk-csi-resizer-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-csi-resizer-role-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-controller-sa
+    name: csi-azuredisk-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-azuredisk-external-resizer-role
+  name: csi-azuredisk-external-resizer-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-controller-secret-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-controller-secret-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -181,33 +201,37 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-controller-secret-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-controller-secret-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-controller-sa
+    name: csi-azuredisk-controller-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-csi-azuredisk-controller-secret-role
+  name: csi-azuredisk-controller-secret-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-controller
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-controller-${suffix}
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${node_provider_name}-csi-azuredisk-controller
+      app: csi-azuredisk-controller-${suffix}
   template:
     metadata:
       labels:
-        app: ${node_provider_name}-csi-azuredisk-controller
+        app: csi-azuredisk-controller-${suffix}
     spec:
       hostNetwork: true
-      serviceAccountName: ${node_provider_name}-csi-azuredisk-controller-sa
+      serviceAccountName: csi-azuredisk-controller-sa-${suffix}
       nodeSelector:
         kubernetes.io/os: linux
         vcluster.loft.sh/node-provider: ${node_provider_name}
@@ -424,7 +448,7 @@ spec:
             type: DirectoryOrCreate
         - name: cloud-config
           secret:
-            secretName: ${node_provider_name}-cloud-config
+            secretName: azure-cloud-config-${suffix}
             items:
             - key: azure.json
               path: azure.json

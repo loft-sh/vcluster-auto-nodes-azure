@@ -7,12 +7,12 @@ locals {
   vcluster_name      = nonsensitive(var.vcluster.instance.metadata.name)
   vcluster_namespace = nonsensitive(var.vcluster.instance.metadata.namespace)
 
-  # A random_id resource cannot be used here because of how the VPC module applies resources.
+  # A random_id resource cannot be used here because of how the VNet module applies resources.
   # The module needs resource names to be known in advance.
-  random_id            = substr(md5(format("%s%s", local.vcluster_namespace, local.vcluster_name)), 0, 8)
-  vcluster_unique_name = format("%s-%s", local.vcluster_name, local.random_id)
+  random_id = substr(md5(format("%s%s", local.vcluster_namespace, local.vcluster_name)), 0, 8)
 
-  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vnet-cidr"], "10.5.0.0/16")
+  # The name of the property is set to 'vpc-cidr' to keep the same naming accross different quick start templates
+  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vpc-cidr"], "10.5.0.0/16")
 
   # Use 2 AZs if available
   azs = try(

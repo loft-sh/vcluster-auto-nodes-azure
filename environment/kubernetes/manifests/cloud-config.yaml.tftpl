@@ -1,7 +1,9 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ${node_provider_name}-cloud-config
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: azure-cloud-config-${suffix}
   namespace: kube-system
 type: Opaque
 stringData:

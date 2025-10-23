@@ -2,13 +2,17 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-node-sa
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-node-sa-${suffix}
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-node-role
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-node-role-${suffix}
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -26,20 +30,24 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-node-secret-binding
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-node-secret-binding-${suffix}
 subjects:
   - kind: ServiceAccount
-    name: ${node_provider_name}-csi-azuredisk-node-sa
+    name: csi-azuredisk-node-sa-${suffix}
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: ${node_provider_name}-csi-azuredisk-node-role
+  name: csi-azuredisk-node-role-${suffix}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: ${node_provider_name}-csi-azuredisk-node
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: csi-azuredisk-node-${suffix}
   namespace: kube-system
 spec:
   updateStrategy:
@@ -48,15 +56,15 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: ${node_provider_name}-csi-azuredisk-node
+      app: csi-azuredisk-node-${suffix}
   template:
     metadata:
       labels:
-        app: ${node_provider_name}-csi-azuredisk-node
+        app: csi-azuredisk-node-${suffix}
     spec:
       hostNetwork: true
       dnsPolicy: Default
-      serviceAccountName: ${node_provider_name}-csi-azuredisk-node-sa
+      serviceAccountName: csi-azuredisk-node-sa-${suffix}
       nodeSelector:
         kubernetes.io/os: linux
         vcluster.loft.sh/node-provider: ${node_provider_name}
@@ -227,7 +235,7 @@ spec:
           name: sys-class
         - name: cloud-config
           secret:
-            secretName: ${node_provider_name}-cloud-config
+            secretName: azure-cloud-config-${suffix}
             items:
             - key: azure.json
               path: azure.json
@@ -235,6 +243,8 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
   name: disk.csi.azure.com
   annotations:
     csiDriver: v1.33.0
@@ -247,7 +257,9 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ${node_provider_name}-disk-standard
+  annotations:
+    vcluster.loft.sh/node-provider: ${node_provider_name}
+  name: ${node_provider_name}-disk-default
 provisioner: disk.csi.azure.com
 parameters:
   skuName: StandardSSD_LRS
