@@ -5,15 +5,21 @@ metadata:
 spec:
   terraform:
     nodeEnvironmentTemplate:
-      git:
-        repository: https://github.com/loft-sh/vcluster-auto-nodes-azure.git
-        subPath: environment
-        branch: stable
+      infrastructure:
+        git:
+          repository: https://github.com/loft-sh/vcluster-auto-nodes-azure.git
+          tag: v0.1.0
+          subPath: environment/infrastructure
+      kubernetes:
+        git:
+          repository: https://github.com/loft-sh/vcluster-auto-nodes-azure.git
+          tag: v0.1.0
+          subPath: environment/kubernetes
     nodeTemplate:
       git:
         repository: https://github.com/loft-sh/vcluster-auto-nodes-azure.git
+        tag: v0.1.0
         subPath: node
-        branch: stable
     nodeTypes:
     - name: standard-d2s-v5
       resources:
