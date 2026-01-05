@@ -12,7 +12,7 @@ locals {
   random_id = substr(md5(format("%s%s", local.vcluster_namespace, local.vcluster_name)), 0, 8)
 
   # The name of the property is set to 'vpc-cidr' to keep the same naming accross different quick start templates
-  vnet_cidr_block = try(var.vcluster.properties["vcluster.com/vpc-cidr"], "10.5.0.0/16")
+  vnet_cidr_block = nonsensitive(try(var.vcluster.properties["vcluster.com/vpc-cidr"], "10.5.0.0/16"))
 
   # Use 2 AZs if available
   azs = try(
@@ -25,6 +25,6 @@ locals {
   public_subnets  = [for idx, az in local.azs : cidrsubnet(local.vnet_cidr_block, 8, idx)]
   private_subnets = [for idx, az in local.azs : cidrsubnet(local.vnet_cidr_block, 8, idx + length(local.azs))]
 
-  ccm_enabled = try(tobool(var.vcluster.properties["vcluster.com/ccm-enabled"]), true)
-  csi_enabled = try(tobool(var.vcluster.properties["vcluster.com/csi-enabled"]), true)
+  ccm_enabled = nonsensitive(try(tobool(var.vcluster.properties["vcluster.com/ccm-enabled"]), true))
+  csi_enabled = nonsensitive(try(tobool(var.vcluster.properties["vcluster.com/csi-enabled"]), true))
 }
