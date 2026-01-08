@@ -55,7 +55,7 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
     azurerm_network_interface.private_vm.id,
   ]
 
-  user_data = base64encode(var.vcluster.userData)
+  user_data = var.vcluster.userData != "" ? base64encode(var.vcluster.userData) : null
 
   identity {
     type         = "UserAssigned"
