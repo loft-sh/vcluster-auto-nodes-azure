@@ -76,9 +76,10 @@ resource "azurerm_linux_virtual_machine" "private_vm" {
     version   = "latest"
   }
 
-  tags = {
-    "name"               = local.vm_name
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
-  }
+  tags = merge({
+    "name" = local.vm_name
+    }, var.vcluster.instance != null ? {
+    "vcluster:name"      = nonsensitive(var.vcluster.instance.metadata.name)
+    "vcluster:namespace" = nonsensitive(var.vcluster.instance.metadata.namespace)
+  } : {})
 }
