@@ -33,13 +33,22 @@ These modules dynamically create Azure VMs as vCluster Private Nodes, powered by
 - **Cost optimization** – Provision only the resources you actually need  
 - **Simple configuration** – Define node requirements directly in your `vcluster.yaml`  
 
-By default, this quickstart **NodeProvider** isolates each vCluster into its own Virtual Network (VNet).
+Shared infrastructure is provisioned once per **NetworkEnvironment** and reused by every vCluster that runs on it.
+
+## Compatibility
+
+| Provider version | vCluster Platform | Infrastructure model |
+| ---------------- | ----------------- | -------------------- |
+| `v0.2.x`         | `>= 4.13.0-alpha.0` | Shared, cluster-scoped `NetworkEnvironment` |
+| `v0.1.x`         | `< 4.13.0`        | Per-vCluster `NodeEnvironment` |
+
+There is no supported migration of existing `NodeEnvironment` infrastructure to a `NetworkEnvironment`. Upgrading from `v0.1.x` requires Platform 4.13 and new NetworkEnvironment infrastructure.
 
 ---
 
-## Resources Created Per Virtual Cluster
+## Resources Created
 
-### [Infrastructure](./environment/infrastructure)
+### [Infrastructure](./environment/infrastructure) (per NetworkEnvironment)
 
 - A dedicated Virtual Network (VNet)  
 - Public subnets in two Availability Zones  
@@ -49,15 +58,12 @@ By default, this quickstart **NodeProvider** isolates each vCluster into its own
 - A managed identity for worker nodes  
   - Permissions/role assignments depend on whether CCM and CSI are enabled  
 
-### [Kubernetes](./environment/kubernetes)
+Shared resources are tagged with `vcluster:network-environment=<name>`.
 
-- Cloud Controller Manager for node initialization and automatic LoadBalancer creation  
-- **Azure Disk CSI** driver with a default storage class  
-  - The default storage class does **not** enforce allowed topologies (important in multi-cloud setups). You can provide your own.  
-
-### [Nodes](./node/)
+### [Nodes](./node/) (per vCluster)
 
 - Azure VMs using the selected `instance-type`, attached to private subnets  
+- Tagged with `vcluster:name` and `vcluster:namespace` of the owning vCluster  
 
 ---
 
@@ -153,9 +159,8 @@ You can configure the **NodeProvider** with the following options:
 
 | Option                        | Default       | Description                                                                                 |
 | ----------------------------- | ------------- | ------------------------------------------------------------------------------------------- |
-| `vcluster.com/ccm-enabled`    | `true`        | Enables deployment of the Cloud Controller Manager.                                         |
-| `vcluster.com/ccm-lb-enabled` | `true`        | Enables the CCM service controller. If disabled, CCM will not create LoadBalancer services. |
-| `vcluster.com/csi-enabled`    | `true`        | Enables deployment of the CSI driver with a `<provider>-default-disk` storage class.                 |
+| `vcluster.com/ccm-enabled`    | `true`        | Grants the worker node managed identity the roles required by the Azure Cloud Controller Manager. |
+| `vcluster.com/csi-enabled`    | `true`        | Grants the worker node managed identity the roles required by the Azure Disk CSI driver. |
 | `vcluster.com/vpc-cidr`       | `10.5.0.0/16` | Sets the VPC CIDR range. Useful in multi-cloud scenarios to avoid CIDR conflicts.           |
 
 ## Example
@@ -170,7 +175,6 @@ privateNodes:
   autoNodes:
   - provider: ms-azure
     properties:
-      vcluster.com/ccm-lb-enabled: "false"
       vcluster.com/csi-enabled: "false"
       vcluster.com/vpc-cidr: "10.15.0.0/16"
     dynamic:

@@ -4,9 +4,8 @@ resource "azurerm_user_assigned_identity" "vcluster_node" {
   resource_group_name = local.resource_group_name
 
   tags = {
-    "name"               = format("vcluster-node-%s", local.random_id)
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
+    "name"                         = format("vcluster-node-%s", local.random_id)
+    "vcluster:network-environment" = local.network_environment_name
   }
 }
 
@@ -17,7 +16,7 @@ resource "azurerm_user_assigned_identity" "vcluster_node" {
 resource "azurerm_role_definition" "ccm" {
   name        = format("vcluster-ccm-%s", local.random_id)
   scope       = local.resource_group_id
-  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
+  description = format("CCM role for network environment %s", local.network_environment_name)
 
   permissions {
     actions = [
@@ -126,7 +125,7 @@ resource "azurerm_role_assignment" "ccm" {
 resource "azurerm_role_definition" "csi" {
   name        = format("vcluster-csi-%s", local.random_id)
   scope       = local.resource_group_id
-  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
+  description = format("CSI role for network environment %s", local.network_environment_name)
 
   permissions {
     actions = [

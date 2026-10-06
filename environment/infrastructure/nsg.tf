@@ -64,8 +64,7 @@ resource "azurerm_network_security_group" "workers" {
   }
 
   tags = {
-    "name"               = format("vcluster-workers-nsg-%s", local.random_id)
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
+    "name"                         = format("vcluster-workers-nsg-%s", local.random_id)
+    "vcluster:network-environment" = local.network_environment_name
   }
 }
