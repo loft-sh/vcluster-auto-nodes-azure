@@ -1,6 +1,7 @@
 locals {
-  vcluster_name      = nonsensitive(var.vcluster.instance.metadata.name)
-  vcluster_namespace = nonsensitive(var.vcluster.instance.metadata.namespace)
+  # var.vcluster.instance is null for NodeClaims without a vCluster, name and namespace are always set
+  vcluster_name      = nonsensitive(var.vcluster.name)
+  vcluster_namespace = nonsensitive(var.vcluster.namespace)
 
   infrastructure = var.vcluster.networkEnvironment.outputs.infrastructure
 
