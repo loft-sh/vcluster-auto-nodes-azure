@@ -4,20 +4,27 @@ resource "azurerm_user_assigned_identity" "vcluster_node" {
   resource_group_name = local.resource_group_name
 
   tags = {
-    "name"               = format("vcluster-node-%s", local.random_id)
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
+    "name"                         = format("vcluster-node-%s", local.random_id)
+    "vcluster:network-environment" = local.network_environment_name
   }
 }
+
+# The CCM and CSI roles below are not consumed by anything this module deploys.
+# They exist so an Azure Cloud Controller Manager or Azure Disk CSI driver installed
+# later by the cluster administrator can authenticate with the worker node managed identity
+# (useManagedIdentityExtension + userAssignedIdentityID = vcluster_node_client_id).
+# The role definitions and assignments are toggled with the vcluster.com/ccm-enabled and vcluster.com/csi-enabled properties.
 
 ###################
 # CCM
 ###################
 
 resource "azurerm_role_definition" "ccm" {
+  for_each = local.ccm_enabled ? { enabled = true } : {}
+
   name        = format("vcluster-ccm-%s", local.random_id)
   scope       = local.resource_group_id
-  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
+  description = format("CCM role for network environment %s", local.network_environment_name)
 
   permissions {
     actions = [
@@ -109,10 +116,10 @@ resource "azurerm_role_definition" "ccm" {
 }
 
 resource "azurerm_role_assignment" "ccm" {
-  for_each = local.ccm_enabled ? { enabled = true } : {}
+  for_each = azurerm_role_definition.ccm
 
   scope              = local.resource_group_id
-  role_definition_id = split("|", azurerm_role_definition.ccm.id)[0] # the output returns a list(!), it's not ID only!
+  role_definition_id = split("|", each.value.id)[0] # the output returns a list(!), it's not ID only!
   principal_id       = azurerm_user_assigned_identity.vcluster_node.principal_id
   principal_type     = "ServicePrincipal"
 
@@ -124,9 +131,11 @@ resource "azurerm_role_assignment" "ccm" {
 ###################
 
 resource "azurerm_role_definition" "csi" {
+  for_each = local.csi_enabled ? { enabled = true } : {}
+
   name        = format("vcluster-csi-%s", local.random_id)
   scope       = local.resource_group_id
-  description = format("CSI role for %s:%s", local.vcluster_namespace, local.vcluster_name)
+  description = format("CSI role for network environment %s", local.network_environment_name)
 
   permissions {
     actions = [
@@ -175,10 +184,10 @@ resource "azurerm_role_definition" "csi" {
 }
 
 resource "azurerm_role_assignment" "csi" {
-  for_each = local.csi_enabled ? { enabled = true } : {}
+  for_each = azurerm_role_definition.csi
 
   scope              = local.resource_group_id
-  role_definition_id = split("|", azurerm_role_definition.csi.id)[0] # the output returns a list(!), it's not ID only!
+  role_definition_id = split("|", each.value.id)[0] # the output returns a list(!), it's not ID only!
   principal_id       = azurerm_user_assigned_identity.vcluster_node.principal_id
   principal_type     = "ServicePrincipal"
 

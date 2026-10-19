@@ -33,13 +33,22 @@ These modules dynamically create Azure VMs as vCluster Private Nodes, powered by
 - **Cost optimization** – Provision only the resources you actually need  
 - **Simple configuration** – Define node requirements directly in your `vcluster.yaml`  
 
-By default, this quickstart **NodeProvider** isolates each vCluster into its own Virtual Network (VNet).
+Shared infrastructure is provisioned once per **NetworkEnvironment** and reused by every vCluster that runs on it.
+
+## Compatibility
+
+| Provider version | vCluster Platform | Infrastructure model |
+| ---------------- | ----------------- | -------------------- |
+| `v0.2.x`         | `>= 4.13.0-alpha.0` | Shared, cluster-scoped `NetworkEnvironment` |
+| `v0.1.x`         | `< 4.13.0`        | Per-vCluster `NodeEnvironment` |
+
+There is no supported migration of existing `NodeEnvironment` infrastructure to a `NetworkEnvironment`. Upgrading from `v0.1.x` requires Platform 4.13 and new NetworkEnvironment infrastructure.
 
 ---
 
-## Resources Created Per Virtual Cluster
+## Resources Created
 
-### [Infrastructure](./environment/infrastructure)
+### [Infrastructure](./environment/infrastructure) (per NetworkEnvironment)
 
 - A dedicated Virtual Network (VNet)  
 - Public subnets in two Availability Zones  
@@ -47,17 +56,14 @@ By default, this quickstart **NodeProvider** isolates each vCluster into its own
 - A NAT Gateway for the private subnets  
 - A Network Security Group (NSG) for worker nodes  
 - A managed identity for worker nodes  
-  - Permissions/role assignments depend on whether CCM and CSI are enabled  
+  - Optional CCM and CSI roles and role assignments, for a Cloud Controller Manager or CSI driver you deploy yourself (see [Deploying CCM and CSI](#deploying-ccm-and-csi))  
 
-### [Kubernetes](./environment/kubernetes)
+Shared resources are tagged with `vcluster:network-environment=<name>`.
 
-- Cloud Controller Manager for node initialization and automatic LoadBalancer creation  
-- **Azure Disk CSI** driver with a default storage class  
-  - The default storage class does **not** enforce allowed topologies (important in multi-cloud setups). You can provide your own.  
-
-### [Nodes](./node/)
+### [Nodes](./node/) (per vCluster)
 
 - Azure VMs using the selected `instance-type`, attached to private subnets  
+- Tagged with `vcluster:name` and `vcluster:namespace` of the owning vCluster  
 
 ---
 
@@ -153,9 +159,8 @@ You can configure the **NodeProvider** with the following options:
 
 | Option                        | Default       | Description                                                                                 |
 | ----------------------------- | ------------- | ------------------------------------------------------------------------------------------- |
-| `vcluster.com/ccm-enabled`    | `true`        | Enables deployment of the Cloud Controller Manager.                                         |
-| `vcluster.com/ccm-lb-enabled` | `true`        | Enables the CCM service controller. If disabled, CCM will not create LoadBalancer services. |
-| `vcluster.com/csi-enabled`    | `true`        | Enables deployment of the CSI driver with a `<provider>-default-disk` storage class.                 |
+| `vcluster.com/ccm-enabled`    | `false`       | Grants the worker node managed identity the roles required by the Azure Cloud Controller Manager. The CCM itself is not deployed. |
+| `vcluster.com/csi-enabled`    | `false`       | Grants the worker node managed identity the roles required by the Azure Disk CSI driver. The CSI driver itself is not deployed. |
 | `vcluster.com/vpc-cidr`       | `10.5.0.0/16` | Sets the VPC CIDR range. Useful in multi-cloud scenarios to avoid CIDR conflicts.           |
 
 ## Example
@@ -170,8 +175,7 @@ privateNodes:
   autoNodes:
   - provider: ms-azure
     properties:
-      vcluster.com/ccm-lb-enabled: "false"
-      vcluster.com/csi-enabled: "false"
+      vcluster.com/csi-enabled: "true"
       vcluster.com/vpc-cidr: "10.15.0.0/16"
     dynamic:
     - name: az-cpu-nodes
@@ -181,19 +185,47 @@ privateNodes:
         values: ["Standard_D2s_v5", "Standard_D4s_v5", "Standard_D8s_v5"]
 ```
 
+## Deploying CCM and CSI
+
+This provider does **not** deploy the Azure [Cloud Controller Manager (CCM)](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) or the Azure Disk [Container Storage Interface (CSI)](https://kubernetes.io/blog/2019/01/15/container-storage-interface-ga/) driver.
+It only prepares the Azure side so you can install them later:
+
+- `vcluster.com/ccm-enabled` creates the CCM role and assigns it to the worker node managed identity.
+- `vcluster.com/csi-enabled` creates the CSI role and assigns it to the worker node managed identity.
+
+Both default to `false`. Set them to `true` only if you plan to run CCM or CSI and want them to authenticate with the worker node managed identity.
+
+To use the node identity, configure the `azure.json` cloud config of your CCM and CSI deployments with values from the NetworkEnvironment outputs:
+
+```json
+{
+  "cloud": "AzurePublicCloud",
+  "subscriptionId": "<subscription_id>",
+  "resourceGroup": "<resource_group_name>",
+  "location": "<location>",
+  "vmType": "standard",
+  "useManagedIdentityExtension": true,
+  "userAssignedIdentityID": "<vcluster_node_client_id>",
+  "useInstanceMetadata": true,
+  "securityGroupName": "<security_group_name>"
+}
+```
+
+Refer to the full [list of permissions](environment/infrastructure/identity.tf) for what each role grants.
+
 ## Security considerations
 
-> **_NOTE:_** When deploying [Cloud Controller Manager (CCM)](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) and [Container Storage Interface (CSI)](https://kubernetes.io/blog/2019/01/15/container-storage-interface-ga/) with Auto Nodes, permissions are granted through user assigned managed identity.
-**This means all worker nodes inherit the same permissions as CCM and CSI.**
+> **_NOTE:_** When enabled, the CCM and CSI roles are granted through the user assigned managed identity attached to every worker node.
+**This means all worker nodes inherit the same permissions as CCM and CSI, even if you never deploy them.**
 As a result, **any pod the cluster could potentially access the same cloud permissions**.
 Refer to the full [list of permissions](environment/infrastructure/identity.tf) for details.
 
 Cluster administrators should be aware of the following:
 
 - **Shared permissions** – all pods running in a **host network** may gain the same access level as CCM and CSI.  
-- **Mitigation** – cluster administrators can disable CCM and CSI deployments.  
-  In that case, virtual machines will not be granted additional permissions.  
-  However, responsibility for deploying and securely configuring CCM and CSI will then fall to the cluster administrator.  
+- **Mitigation** – leave `vcluster.com/ccm-enabled` and `vcluster.com/csi-enabled` at their default of `false`.  
+  In that case, the roles are not created and virtual machines are not granted additional permissions.  
+  CCM and CSI, if needed, must then be authenticated with credentials the cluster administrator manages.  
 
 > **_NOTE:_** Security-sensitive environments should carefully review which permissions are granted to clusters and consider whether CCM/CSI should be disabled and managed manually.
 

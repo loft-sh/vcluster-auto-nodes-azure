@@ -46,9 +46,8 @@ module "nat_gateway" {
   }
 
   tags = {
-    "name"               = format("vcluster-nat-gateway-%s", local.random_id)
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
+    "name"                         = format("vcluster-nat-gateway-%s", local.random_id)
+    "vcluster:network-environment" = local.network_environment_name
   }
 }
 
@@ -68,9 +67,8 @@ module "vnet" {
   subnets = {}
 
   tags = {
-    "name"               = format("vcluster-vnet-%s", local.random_id)
-    "vcluster:name"      = local.vcluster_name
-    "vcluster:namespace" = local.vcluster_namespace
+    "name"                         = format("vcluster-vnet-%s", local.random_id)
+    "vcluster:network-environment" = local.network_environment_name
   }
 
   enable_telemetry = false
